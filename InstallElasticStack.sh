@@ -5,7 +5,7 @@
 
 # Exit if not root user / sudo
 if [ "$EUID" -ne 0 ]
-  then echo "Please run as root or the sudo user."
+  then echo "Please run as root or the sudo user." 
   exit
 fi
 
@@ -33,8 +33,8 @@ EOF
 sudo dnf install -y --enablerepo=elasticsearch elasticsearch
 
 # Configure Elasticsearch to start when the system boots
-sudo /bin/systemctl daemon-reload
-sudo /bin/systemctl enable elasticsearch.service
+sudo systemctl daemon-reload
+sudo systemctl enable elasticsearch.service
 
 # Stop and then start the Elasticsearch service
 sudo systemctl stop elasticsearch.service
@@ -68,8 +68,8 @@ KIBANA_NEW='server.host: "0.0.0.0"'
 sed -i "/$KIBANA_REPLACETEXT/c $KIBANA_NEW" /etc/kibana/kibana.yml
 
 # Configure Kibana to start when the system boots
-sudo /bin/systemctl daemon-reload
-sudo /bin/systemctl enable kibana.service
+sudo systemctl daemon-reload
+sudo systemctl enable kibana.service
 
 # Stop and then start the Kibana service
 sudo systemctl stop kibana.service
@@ -98,6 +98,23 @@ do
     exit
     fi
 done
+
+
+# Edit system resource limits in Elasticsearch
+if [[ -e /etc/sysconfig/elasticsearch ]]; then
+	sed -i '/MAX_LOCKED_MEMORY/s/^#//g' /etc/sysconfig/elasticsearch
+elif [[ -e /etc/default/elasticsearch ]]; then
+	sed -i '/MAX_LOCKED_MEMORY/s/^#//g' /etc/default/elasticsearch
+fi
+
+# Limit memory by setting Elasticsearch heap size (use no more than half of your available memory and 32gb max)
+sed -i "s/^-Xms.*$/-Xms${heap_size}/" /etc/elasticsearch/jvm.options
+sed -i "s/^-Xmx.*$/-Xmx${heap_size}/" /etc/elasticsearch/jvm.options
+
+systemctl daemon-reload
+service elasticsearch restart
+service kibana restart
+
 
 # Set the Logstash repository
 rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
