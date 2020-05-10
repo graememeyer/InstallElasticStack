@@ -75,10 +75,8 @@ sudo systemctl enable kibana.service
 sudo systemctl stop kibana.service
 sudo systemctl start kibana.service
 
-sleep 20s
-
 # Test if Kibana is online
-for i in {1..5}
+for i in {1..10}
 do  
     if curl 'localhost:5601'
     then 
@@ -91,7 +89,7 @@ do
         sleep 5s
     fi
 
-    if $i -eq 5
+    if $i -eq "5"
     then
     echo "Kibana never came up."
     echo "Exiting"
@@ -108,6 +106,7 @@ elif [[ -e /etc/default/elasticsearch ]]; then
 fi
 
 # Limit memory by setting Elasticsearch heap size (use no more than half of your available memory and 32gb max)
+heap_size="1g"
 sed -i "s/^-Xms.*$/-Xms${heap_size}/" /etc/elasticsearch/jvm.options
 sed -i "s/^-Xmx.*$/-Xmx${heap_size}/" /etc/elasticsearch/jvm.options
 
